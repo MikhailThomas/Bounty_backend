@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt");
 const mysql = require("mysql");
 const jwt = require("jsonwebtoken");
 
+const PORT = process.env.PORT
 // middleWare
 const cookieParser = require("cookie-parser");
 // express app
@@ -14,7 +15,8 @@ const app = express();
 const router = express.Router();
 app.use(router, cors(), express.json(),bodyParser.urlencoded({extended: 'true'}));
 
-app.set("Port", process.env.PORT);
+app.set("port", PORT || 5000);
+
 app.use(express.static("view"));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,8 +26,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(app.get("Port"), () => {
-  console.log(`Server running on port ${app.get("Port")}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${app.get("port")}`);
 });
 
 app.get("/", (req, res) => {
@@ -37,7 +39,7 @@ router.get("/monsters", (req, res) => {
   const getAll = `
     select * from Monsters
     `;
-  db.query(getAll, (err, results) => {
+  con.query(getAll, (err, results) => {
     if (err) throw err;
     res.json({
       status: 200,
@@ -51,20 +53,71 @@ router.get('/monsters/:id', (req, res) =>{
   const getSingle = `
   select monsterID = ${req.params.id}
   `
-
-  db.query(getSingle, (err,results)=>{
+  con.query(getSingle, (err,results)=>{
     if (err) throw err
     res.json({
       status: 200,
       Monsters: results
-    })
-  })
-})
+    });
+  });
+});
 
-// fetch posts
+// register
+router.post("/monsters", bodyParser.json(), (req, res) => {
+  const body = req.body;
+  let species = `
+    select * from Monsters where species = ?
+    `;
+
+  let speciesA = {
+    emailAddress: body.emailAddress,
+  };
+  con.query(email, emailA, async (err, results) => {
+    if (err) throw err;
+    if (results.length > 0) {
+      res.json({
+        status: 400,
+        msg: "This email already exists",
+      });
+    } else {
+      let generateSalt = await bcrypt.genSalt();
+      body.password = await bcrypt.hash(body.password, generateSalt);
+      body.dateJoined = new Date().toISOString().slice(0, 10);
+
+      const add = `
+            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
+            `;
+      con.query(
+        add,
+        [
+          body.firstName,
+          body.lastName,
+          body.img,
+          body.description,
+          body.favorite,
+          body.emailAddress,
+          body.home,
+          body.phone_number,
+          body.password,
+          body.dateJoined,
+        ],
+        (err, results) => {
+          if (err) throw err;
+          res.json({
+            status: 200,
+            msg: "You have successfuly registered",
+          });
+        }
+      );
+    }
+  });
+});
+
+
+// fetch user
 router.get("/users", (req, res) => {
   const getAll = "select * from Users";
-  db.query =
+  con.query =
     (getAll,
     (err, result) => {
       if (err) throw err;
@@ -75,11 +128,11 @@ router.get("/users", (req, res) => {
     });
 });
 
-// fetch single post
-router.get("/User/:id", (req, res) => {
-  const getSingle = `select * from Monsters where id = ${req.params.id}`;
+// fetch single user
+router.get("/user/:id", (req, res) => {
+  const getSingle = `select * from Users where id = ${req.params.id}`;
 
-  db.query =
+  con.query =
     (getSingle,
     (err, result) => {
       if (err) throw err;
@@ -91,16 +144,16 @@ router.get("/User/:id", (req, res) => {
 });
 
 // register
-router.post("/Users", bodyParser.json(), (req, res) => {
-  const body = req.bodyconst;
-  email = `
-    select * from users where emailAdress =?
+router.post("/users", bodyParser.json(), (req, res) => {
+  const body = req.body;
+  let email = `
+    select * from Users where emailAddress =?
     `;
 
   let emailA = {
-    emailAdress: body.emailAdress,
+    emailAddress: body.emailAddress,
   };
-  db.query(emailA, async (err, results) => {
+  con.query(email, emailA, async (err, results) => {
     if (err) throw err;
     if (results.length > 0) {
       res.json({
@@ -109,18 +162,19 @@ router.post("/Users", bodyParser.json(), (req, res) => {
       });
     } else {
       let generateSalt = await bcrypt.genSalt();
-      body.password = await bycrypt.hash(body.password, generateSalt);
+      body.password = await bcrypt.hash(body.password, generateSalt);
       body.dateJoined = new Date().toISOString().slice(0, 10);
 
       const add = `
-            insert into Users(firstName, lastName, img, description,favorite, body.emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
+            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
             `;
-      db.query(
+      con.query(
         add,
         [
           body.firstName,
           body.lastName,
           body.img,
+          body.description,
           body.favorite,
           body.emailAddress,
           body.home,
@@ -141,7 +195,7 @@ router.post("/Users", bodyParser.json(), (req, res) => {
 });
 
 //LOGIN
-router.patch("/Users", bodyParser.json(), (req, res) => {
+router.patch("/users", bodyParser.json(), (req, res) => {
   const body = req.body;
   const login = `
         SELECT * FROM Users WHERE ?
@@ -150,7 +204,7 @@ router.patch("/Users", bodyParser.json(), (req, res) => {
   let email = {
     emailAddress: body.emailAddress,
   };
-  db.query(login, email, async (err, results) => {
+  con.query(login, email, async (err, results) => {
     if (err) throw err;
     if (results.length === 0) {
       res.json({
@@ -179,7 +233,7 @@ router.patch("/Users", bodyParser.json(), (req, res) => {
 
         jwt.sign(
           payload,
-          process.env.jwtsecret,
+          process.env.DBSECRET,
           { expiresIn: "10d" },
           (err, token) => {
             if (err) throw err;
@@ -196,7 +250,8 @@ router.patch("/Users", bodyParser.json(), (req, res) => {
 });
 
 // update table
-router.get("/Users/:id", bodyParser.json(), async (req, res) => {
+router.put("/users/:id", async (req, res) => {
+  const body = req.body
   const update = `
     update Users
     firstname = ?, lastname = ?, img = ?, description = ?, favorite = ?, emailAddress = ?, home = ?, phone_number = ?, password = ?
@@ -204,7 +259,7 @@ router.get("/Users/:id", bodyParser.json(), async (req, res) => {
     `
     let generateSalt = await bcrypt.genSalt()
     body.password = await bcrypt.hash(body.password, generateSalt)
-    db.query(edit, [body.firstName, body.lastName, body.img, body.description, body.favorite, body.emailAddress, body.home, body.phone_number, body.password],(err, result)=>{
+    con.query(edit, [body.firstName, body.lastName, body.img, body.description, body.favorite, body.emailAddress, body.home, body.phone_number, body.password],(err, result)=>{
         if (err) throw err
         res.json({
             status: 204,
@@ -215,11 +270,11 @@ router.get("/Users/:id", bodyParser.json(), async (req, res) => {
 
 // delete User
 
-router.delete("/Users/:id", (req, res) => {
-  const deleteUser = `delete from Users where where UserID = ${req.params.id};
+router.delete("/Users/:id", bodyParser.json(),async (req, res) => {
+  const deleteUser = `delete from Users where userID = ${req.params.id};
     alter table Users auto_increment = 1;
     `;
-  db.query(deleteUser, (err, result) => {
+  con.query(deleteUser, (err, result) => {
     if (err) throw err;
     res.json({
       status: 204,
