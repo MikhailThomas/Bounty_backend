@@ -12,7 +12,7 @@ const cookieParser = require("cookie-parser");
 // express app
 const app = express();
 const router = express.Router();
-app.use(router, cors(), express.json());
+app.use(router, cors(), express.json(),bodyParser.urlencoded({extended: 'true'}));
 
 app.set("Port", process.env.PORT);
 app.use(express.static("view"));
@@ -29,7 +29,7 @@ app.listen(app.get("Port"), () => {
 });
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "public/index.html");
+  res.sendFile(__dirname + "/public/index.html");
 });
 
 // monsters
@@ -45,6 +45,21 @@ router.get("/monsters", (req, res) => {
     });
   });
 });
+
+// get Monsters
+router.get('/monsters/:id', (req, res) =>{
+  const getSingle = `
+  select monsterID = ${req.params.id}
+  `
+
+  db.query(getSingle, (err,results)=>{
+    if (err) throw err
+    res.json({
+      status: 200,
+      Monsters: results
+    })
+  })
+})
 
 // fetch posts
 router.get("/users", (req, res) => {
@@ -76,7 +91,7 @@ router.get("/User/:id", (req, res) => {
 });
 
 // register
-router.post("/Users", bodyparser.json(), (req, res) => {
+router.post("/Users", bodyParser.json(), (req, res) => {
   const body = req.bodyconst;
   email = `
     select * from users where emailAdress =?
@@ -98,14 +113,17 @@ router.post("/Users", bodyparser.json(), (req, res) => {
       body.dateJoined = new Date().toISOString().slice(0, 10);
 
       const add = `
-            insert into Users(userName, body.emaolAddress, phone_number, password,dateJoined) VALUES(?,?,?,?,?)
+            insert into Users(firstName, lastName, img, description,favorite, body.emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
             `;
       db.query(
         add,
         [
-          body.userName,
-          body.fullName,
+          body.firstName,
+          body.lastName,
+          body.img,
+          body.favorite,
           body.emailAddress,
+          body.home,
           body.phone_number,
           body.password,
           body.dateJoined,
@@ -148,9 +166,11 @@ router.patch("/Users", bodyParser.json(), (req, res) => {
       } else {
         const payload = {
           user: {
-            userName: results[0].username,
-            fullName: results[0].fullname,
+            firstName: results[0].firstname,
+            lastName: results[0].lastname,
+            img: results[0].img,
             emailAddress: results[0].emailAddress,
+            homeAddress: results[0].homeaddress,
             phone_number: results[0].phone_number,
             password: results[0].password,
             dateJoined: results[0].dateJoined,
@@ -176,15 +196,15 @@ router.patch("/Users", bodyParser.json(), (req, res) => {
 });
 
 // update table
-router.get("/Users/:id", bodyParser.json(), (req, res) => {
+router.get("/Users/:id", bodyParser.json(), async (req, res) => {
   const update = `
     update Users
-    set username = ?, firstname = ?, lastname = ?, emailAddress =?,phone_number = ?,password = ?
+    firstname = ?, lastname = ?, img = ?, description = ?, favorite = ?, emailAddress = ?, home = ?, phone_number = ?, password = ?
     where userID=${req.params.id}
     `
     let generateSalt = await bcrypt.genSalt()
     body.password = await bcrypt.hash(body.password, generateSalt)
-    db.query(edit, [body.userName, body.emailAddress, body.phone_number, body.password],(err, result)=>{
+    db.query(edit, [body.firstName, body.lastName, body.img, body.description, body.favorite, body.emailAddress, body.home, body.phone_number, body.password],(err, result)=>{
         if (err) throw err
         res.json({
             status: 204,
