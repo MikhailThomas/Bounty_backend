@@ -30,11 +30,11 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${app.get("port")}`);
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+router.get("/", (req, res) => {
+  res.sendFile("/public/index.html",{root:'./public/index.html'});
 });
 
-// monsters
+// get monsters
 router.get("/monsters", (req, res) => {
   const getAll = `
     select * from Monsters
@@ -48,7 +48,7 @@ router.get("/monsters", (req, res) => {
   });
 });
 
-// get Monsters
+// get single Monsters
 router.get('/monsters/:id', (req, res) =>{
   const getSingle = `
   select monsterID = ${req.params.id}
@@ -62,7 +62,7 @@ router.get('/monsters/:id', (req, res) =>{
   });
 });
 
-// register
+// register monsters
 router.post("/monsters", bodyParser.json(), (req, res) => {
   const body = req.body;
   let species = `
@@ -70,49 +70,62 @@ router.post("/monsters", bodyParser.json(), (req, res) => {
     `;
 
   let speciesA = {
-    emailAddress: body.emailAddress,
+    species: body.species,
   };
-  con.query(email, emailA, async (err, results) => {
+  con.query(species, speciesA, async (err, results) => {
     if (err) throw err;
     if (results.length > 0) {
       res.json({
         status: 400,
-        msg: "This email already exists",
+        msg: "This species already exists",
       });
-    } else {
-      let generateSalt = await bcrypt.genSalt();
-      body.password = await bcrypt.hash(body.password, generateSalt);
-      body.dateJoined = new Date().toISOString().slice(0, 10);
+    } 
 
       const add = `
-            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
+            insert into Monsters(species, img, description, location, size, difficulty, habitat, delivery, price) VALUES(?,?,?,?,?,?,?,?,?)
             `;
       con.query(
         add,
         [
-          body.firstName,
-          body.lastName,
+          body.species,
           body.img,
           body.description,
-          body.favorite,
-          body.emailAddress,
-          body.home,
-          body.phone_number,
-          body.password,
-          body.dateJoined,
+          body.location,
+          body.size,
+          body.difficulty,
+          body.habitat,
+          body.delivery,
+          body.price
         ],
         (err, results) => {
           if (err) throw err;
           res.json({
             status: 200,
-            msg: "You have successfuly registered",
+            msg: "You have successfuly registered this species",
           });
         }
       );
-    }
-  });
+    })
 });
 
+// edit 
+router.put("/monsters/:id", bodyParser.json(), async (req, res) => {
+  const body = req.body
+  const update = `
+    update Monsters set
+    species = ?, img = ?, description = ?, location = ?, size = ?, difficulty = ?, habitat = ?, delivery = ?, price = ?
+    where monsterID=${req.params.id}
+    `
+
+    
+    con.query(update, [body.species, body.img, body.description, body.location, body.size, body.difficulty, body.habitat, body.delivery, body.price],(err, results)=>{
+        if (err) throw err
+        res.json({
+            status: 204,
+            msg: 'This Monster information has been edited successfully'
+        })
+    })
+});
 
 // fetch user
 router.get("/users", (req, res) => {
@@ -123,7 +136,7 @@ router.get("/users", (req, res) => {
       if (err) throw err;
       res.json({
         status: 200,
-        users: results,
+        users: result,
       });
     });
 });
@@ -250,16 +263,15 @@ router.patch("/users", bodyParser.json(), (req, res) => {
 });
 
 // update table
-router.put("/users/:id", async (req, res) => {
+router.put("/users/:id", bodyParser.json(), async (req, res) => {
   const body = req.body
   const update = `
-    update Users
-    firstname = ?, lastname = ?, img = ?, description = ?, favorite = ?, emailAddress = ?, home = ?, phone_number = ?, password = ?
+    update Users set
+    firstName = ?, lastName = ?, img = ?, description = ?, favorite = ?, emailAddress = ?, home = ?, phone_number = ?
     where userID=${req.params.id}
     `
     let generateSalt = await bcrypt.genSalt()
-    body.password = await bcrypt.hash(body.password, generateSalt)
-    con.query(edit, [body.firstName, body.lastName, body.img, body.description, body.favorite, body.emailAddress, body.home, body.phone_number, body.password],(err, result)=>{
+    con.query(update, [body.firstName, body.lastName, body.img, body.description, body.favorite, body.emailAddress, body.home, body.phone_number],(err, result)=>{
         if (err) throw err
         res.json({
             status: 204,

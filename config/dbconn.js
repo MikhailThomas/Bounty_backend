@@ -7,7 +7,6 @@ const con = createPool({
     host:process.env.DBHOST,
     user:process.env.DBUSER,
     password:process.env.DBPASSWORD,
-    // port:process.env.dbPORT,
     database:process.env.DBNAME,
     multipleStatements:true,
     connectionLimit:10
