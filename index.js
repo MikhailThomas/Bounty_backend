@@ -32,6 +32,7 @@ app.listen(PORT, () => {
 
 router.get("/", (req, res) => {
   res.sendFile("/public/index.html",{root:'./public/index.html'});
+  res.json({ msg: "Welcome" });
 });
 
 // get monsters
