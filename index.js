@@ -248,7 +248,7 @@ router.patch("/users", bodyParser.json(), (req, res) => {
         jwt.sign(
           payload,
           process.env.DBSECRET,
-          { expiresIn: "10d" },
+          { expiresIn: "365d" },
           (err, token) => {
             if (err) throw err;
             res.json({
@@ -283,7 +283,7 @@ router.put("/users/:id", bodyParser.json(), async (req, res) => {
 
 // delete User
 
-router.delete("/Users/:id", bodyParser.json(),async (req, res) => {
+router.delete("/users/:id", bodyParser.json(),async (req, res) => {
   const deleteUser = `delete from Users where userID = ${req.params.id};
     alter table Users auto_increment = 1;
     `;
