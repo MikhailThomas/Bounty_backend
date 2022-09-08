@@ -134,25 +134,23 @@ router.put("/monsters/:id", bodyParser.json(), async (req, res) => {
 
 // fetch user
 router.get("/users", (req, res) => {
-  const getAll = "select * from Users";
-  con.query =
-    (getAll,
-    (err, result) => {
+  const getAll = 
+  `select * from Users
+  `;
+  con.query(getAll,(err, results) => {
       if (err) throw err;
       res.json({
         status: 200,
-        users: result,
+        users: results,
       });
     });
 });
 
 // fetch single user
-router.get("/user/:id", (req, res) => {
-  const getSingle = `select * from Users where id = ${req.params.id}`;
+router.get("/users/:id", (req, res) => {
+  const getSingle = `select * from Users where userId = ${req.params.id}`;
 
-  con.query =
-    (getSingle,
-    (err, result) => {
+  con.query(getSingle, (err, results) => {
       if (err) throw err;
       res.json({
         status: 200,
@@ -165,11 +163,11 @@ router.get("/user/:id", (req, res) => {
 router.post("/users", bodyParser.json(), (req, res) => {
   const body = req.body;
   let email = `
-    select * from Users where emailAddress =?
+    select * from Users where ?
     `;
 
   let emailA = {
-    emailAddress: body.emailAddress,
+    emailAddress: req.body.emailAddress,
   };
   con.query(email, emailA, async (err, results) => {
     if (err) throw err;
@@ -181,10 +179,9 @@ router.post("/users", bodyParser.json(), (req, res) => {
     } else {
       let generateSalt = await bcrypt.genSalt();
       body.password = await bcrypt.hash(body.password, generateSalt);
-      body.dateJoined = new Date().toISOString().slice(0, 10);
 
       const add = `
-            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password, dateJoined) VALUES(?,?,?,?,?,?,?,?,?,?)
+            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password) VALUES(?,?,?,?,?,?,?,?,?)
             `;
       con.query(
         add,
@@ -197,15 +194,38 @@ router.post("/users", bodyParser.json(), (req, res) => {
           body.emailAddress,
           body.home,
           body.phone_number,
-          body.password,
-          body.dateJoined,
+          body.password
         ],
         (err, results) => {
           if (err) throw err;
-          res.json({
-            status: 200,
-            msg: "You have successfuly registered",
-          });
+          const payload ={
+            user:{
+              firstName: body.firstName,
+              lastName: body.lastName,
+              img: body.img,
+              description: body.description,
+              favorite:body.favorite,
+              emailAddress:body.emailAddress,
+              home: body.home,
+              phone_number: body.phone_number,
+              password: body.password
+            }
+          };
+          jwt.sign(
+            payload,
+            process.env.DBSECRET,
+            {expiresIn:"365d"},
+            (err, token) => {
+              if (err) throw err;
+              res.json({
+                status: 200,
+                msg: "You have successfuly registered",
+                user: results,
+                token: token
+              });
+            }
+          )
+          
         }
       );
     }
@@ -242,10 +262,9 @@ router.patch("/users", bodyParser.json(), (req, res) => {
             lastName: results[0].lastname,
             img: results[0].img,
             emailAddress: results[0].emailAddress,
-            homeAddress: results[0].homeaddress,
+            home: results[0].home,
             phone_number: results[0].phone_number,
-            password: results[0].password,
-            dateJoined: results[0].dateJoined,
+            password: results[0].password
           },
         };
 
