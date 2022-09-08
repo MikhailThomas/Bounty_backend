@@ -13,9 +13,6 @@ const cookieParser = require("cookie-parser");
 // express app
 const app = express();
 const router = express.Router();
-app.use(router, cors(), express.json(),bodyParser.urlencoded({extended: 'true'}));
-
-app.set("port", PORT || 5000);
 
 app.use(express.static("view"));
 app.use((req, res, next) => {
@@ -30,6 +27,9 @@ app.use(cors({
   origin: ['http://127.0.0.1:8080', 'http://localhost:8080'],
   credentials: true
 }));
+app.use(router, express.json(),bodyParser.urlencoded({extended: 'true'}));
+
+app.set("port", PORT || 5000);
 app.listen(PORT, () => {
   console.log(`Server running on port ${app.get("port")}`);
 });
