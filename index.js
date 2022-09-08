@@ -25,7 +25,11 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   next();
 });
-
+app.use(cors({
+  mode: 'no-cors',
+  origin: ['http://127.0.0.1:8080', 'http://localhost:8080'],
+  credentials: true
+}));
 app.listen(PORT, () => {
   console.log(`Server running on port ${app.get("port")}`);
 });
