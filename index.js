@@ -161,15 +161,16 @@ router.get("/users/:id", (req, res) => {
 
 // register
 router.post("/users", bodyParser.json(), (req, res) => {
-  const body = req.body;
-  let email = `
-    select * from Users where ?
+  let bd = req.body;
+  const emailA = `
+    select emailAddress from Users where ?
     `;
 
-  let emailA = {
+  let email = {
     emailAddress: req.body.emailAddress,
   };
-  con.query(email, emailA, async (err, results) => {
+
+  con.query(emailA, email, async (err, results) => {
     if (err) throw err;
     if (results.length > 0) {
       res.json({
@@ -178,37 +179,27 @@ router.post("/users", bodyParser.json(), (req, res) => {
       });
     } else {
       let generateSalt = await bcrypt.genSalt();
-      body.password = await bcrypt.hash(body.password, generateSalt);
+      bd.password = await bcrypt.hash(bd.password, generateSalt);
 
-      const add = `
-            insert into Users(firstName, lastName, img, description,favorite, emailAddress, home, phone_number, password) VALUES(?,?,?,?,?,?,?,?,?)
+      const addQ = `
+            insert into Users(firstName, lastName, emailAddress,  password) VALUES(?, ?, ?, ? )
             `;
       con.query(
-        add,
+        addQ,
         [
-          body.firstName,
-          body.lastName,
-          body.img,
-          body.description,
-          body.favorite,
-          body.emailAddress,
-          body.home,
-          body.phone_number,
-          body.password
+          bd.firstName,
+          bd.lastName,
+          bd.emailAddress,
+          bd.password
         ],
         (err, results) => {
           if (err) throw err;
-          const payload ={
+          const payload = {
             user:{
-              firstName: body.firstName,
-              lastName: body.lastName,
-              img: body.img,
-              description: body.description,
-              favorite:body.favorite,
-              emailAddress:body.emailAddress,
-              home: body.home,
-              phone_number: body.phone_number,
-              password: body.password
+              firstName: bd.firstName,
+              lastName: bd.lastName,
+              emailAddress:bd.emailAddress,
+              password: bd.password
             }
           };
           jwt.sign(
