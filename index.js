@@ -42,7 +42,7 @@ router.get("/", (req, res) => {
 // get monsters
 router.get("/monsters", (req, res) => {
   const getAll = `
-    select * from Monsters
+    select * from monsters
     `;
   con.query(getAll, (err, results) => {
     if (err) throw err;
@@ -56,13 +56,13 @@ router.get("/monsters", (req, res) => {
 // get single Monsters
 router.get('/monsters/:id', (req, res) =>{
   const getSingle = `
-  select monsterID = ${req.params.id}
+  select * from monsters where monsterID = ${req.params.id}
   `
   con.query(getSingle, (err,results)=>{
     if (err) throw err
     res.json({
       status: 200,
-      Monsters: results
+      monsters: results
     });
   });
 });
@@ -71,7 +71,7 @@ router.get('/monsters/:id', (req, res) =>{
 router.post("/monsters", bodyParser.json(), (req, res) => {
   const body = req.body;
   let species = `
-    select * from Monsters where species = ?
+    select * from monsters where species = ?
     `;
 
   let speciesA = {
@@ -87,7 +87,7 @@ router.post("/monsters", bodyParser.json(), (req, res) => {
     } 
 
       const add = `
-            insert into Monsters(species, img, description, location, size, difficulty, habitat, delivery, price) VALUES(?,?,?,?,?,?,?,?,?)
+            insert into monsters(species, img, description, location, size, difficulty, habitat, delivery, price) VALUES(?,?,?,?,?,?,?,?,?)
             `;
       con.query(
         add,
@@ -117,7 +117,7 @@ router.post("/monsters", bodyParser.json(), (req, res) => {
 router.put("/monsters/:id", bodyParser.json(), async (req, res) => {
   const body = req.body
   const update = `
-    update Monsters set
+    update monsters set
     species = ?, img = ?, description = ?, location = ?, size = ?, difficulty = ?, habitat = ?, delivery = ?, price = ?
     where monsterID=${req.params.id}
     `
